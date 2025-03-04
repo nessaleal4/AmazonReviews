@@ -15,12 +15,27 @@ import requests
 from io import BytesIO
 
 # Add the project root directory to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# This ensures that the 'src' module can be found
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 
 # Import your project modules
-from src.predict import SentimentPredictor
-from src.preprocess import download_from_dropbox, process_reviews
-from src.split_data import split_dataset
+try:
+    from src.predict import SentimentPredictor
+    from src.preprocess import download_from_dropbox, process_reviews
+    from src.split_data import split_dataset
+except ImportError:
+    st.error("Error importing project modules. Check the console for details.")
+    # Alternative import approach for Streamlit Cloud
+    try:
+        sys.path.append('/mount/src/amazonreviews')
+        from src.predict import SentimentPredictor
+        from src.preprocess import download_from_dropbox, process_reviews
+        from src.split_data import split_dataset
+        st.success("Modules imported using alternative path")
+    except ImportError as e:
+        st.error(f"Still unable to import modules: {str(e)}")
 
 # Set page configuration
 st.set_page_config(
