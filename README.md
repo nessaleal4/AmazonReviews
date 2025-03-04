@@ -31,6 +31,14 @@ The application uses Amazon product review data stored in Dropbox. Each category
 - Books.jsonl.gz
 - Electronics.jsonl.gz
 - Beauty_and_Personal_Care.jsonl.gz
+- Home_and_Kitchen.jsonl.gz
+
+Additionally, metadata files are available for each category:
+
+- meta_Books.jsonl.gz
+- meta_Electronics.jsonl.gz
+- meta_Beauty_and_Personal_Care.jsonl.gz
+- meta_Home_and_Kitchen.jsonl.gz
 
 The app uses these Dropbox URLs to read data directly without requiring local storage.
 
@@ -68,11 +76,10 @@ The app uses these Dropbox URLs to read data directly without requiring local st
    - Repository: `https://github.com/your-username/AmazonReviews`
    - Branch: `main`
    - Main file path: `streamlit/app.py`
-   - Requirements file: `requirements-streamlit.txt`
 
 4. Advanced settings:
    - Python version: 3.9
-   - Packages: Use the requirements file
+   - Packages: Use the requirements-streamlit.txt file
 
 5. Deploy!
 
