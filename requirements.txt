@@ -1,0 +1,16 @@
+pandas
+numpy
+scikit-learn
+tqdm
+pyarrow
+fastparquet
+matplotlib
+seaborn
+streamlit
+requests
+gzip-reader
+nltk
+transformers
+torch
+wordcloud
+plotly
