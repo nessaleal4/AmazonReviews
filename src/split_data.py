@@ -32,7 +32,7 @@ def split_dataset(category, input_dir="data/processed", output_dir="data/sampled
 
 def main():
     parser = argparse.ArgumentParser(description="Split processed data into train/val/test")
-    parser.add_argument("--categories", nargs="+", default=["Electronics", "Books", "Beauty_and_Personal_Care"])
+    parser.add_argument("--categories", nargs="+", default=["Electronics", "Books", "Beauty_and_Personal_Care, "Home_and_Kitchen"])
     args = parser.parse_args()
 
     for category in args.categories:
