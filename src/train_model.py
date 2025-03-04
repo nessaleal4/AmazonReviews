@@ -131,7 +131,7 @@ def train_model(category, model_type='logistic', input_dir="data/sampled", outpu
 
 def main():
     parser = argparse.ArgumentParser(description="Train sentiment analysis models")
-    parser.add_argument("--categories", nargs="+", default=["Electronics", "Books", "Beauty_and_Personal_Care, "Home_and_Kitchen"])
+    parser.add_argument("--categories", nargs="+", default=["Electronics", "Books", "Beauty_and_Personal_Care", "Home_and_Kitchen"])
     parser.add_argument("--model", type=str, default="logistic", choices=["logistic", "random_forest", "svm"])
     args = parser.parse_args()
     
