@@ -47,7 +47,7 @@ st.title("📊 Amazon Reviews Sentiment Analysis")
 st.sidebar.header("Options")
 
 # Category selection
-categories = ["Electronics", "Books", "Beauty_and_Personal_Care, "Home_and_Kitchen"]
+categories = ["Electronics", "Books", "Beauty_and_Personal_Care", "Home_and_Kitchen"]
 selected_category = st.sidebar.selectbox("Select Product Category", categories)
 
 # Initialize predictor if needed
@@ -137,6 +137,7 @@ with tab2:
             "Books": "https://www.dropbox.com/s/312wv7jtm1tpxeo/Books.jsonl.gz?dl=1",
             "Beauty_and_Personal_Care": "https://www.dropbox.com/s/w2bg91ewpziaaa3/Beauty_and_Personal_Care.jsonl.gz?dl=1",
             "Electronics": "https://www.dropbox.com/s/st07mgrwzazitru/Electronics.jsonl.gz?dl=1",
+            "Home_and_Kitchen": "https://www.dropbox.com/s/oxn45ntlkxo8ju5/Home_and_Kitchen.jsonl.gz?dl=1"
         }
         
         url = dropbox_url.get(category)
@@ -343,7 +344,7 @@ with tab4:
     st.write("""
     ## Amazon Reviews Sentiment Analysis
     
-    This application analyzes sentiment in Amazon product reviews across multiple categories including Electronics, Books, and Beauty & Personal Care products.
+    This application analyzes sentiment in Amazon product reviews across multiple categories including Electronics, Books, Beauty & Personal Care products, and Home & Kitchen products.
     
     ### Features:
     
