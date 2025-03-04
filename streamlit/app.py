@@ -47,7 +47,7 @@ st.title("📊 Amazon Reviews Sentiment Analysis")
 st.sidebar.header("Options")
 
 # Category selection
-categories = ["Electronics", "Books", "Beauty_and_Personal_Care"]
+categories = ["Electronics", "Books", "Beauty_and_Personal_Care, "Home_and_Kitchen"]
 selected_category = st.sidebar.selectbox("Select Product Category", categories)
 
 # Initialize predictor if needed
