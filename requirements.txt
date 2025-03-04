@@ -14,3 +14,4 @@ transformers
 torch
 wordcloud
 plotly
+qdrant-client>=1.1.1
