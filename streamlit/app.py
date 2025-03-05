@@ -336,4 +336,16 @@ with tab3:
     
     ### Technical Details:
     
-    - **Model**: Microsoft Mini
+    - **Model**: Microsoft MiniLM, a compact language model that offers excellent performance for sentiment analysis
+    - **Fine-tuning**: Each model is fine-tuned on 10,000 product reviews from its respective category
+    - **Vectorization**: The model converts text to contextual embeddings that capture semantic meaning
+    - **Classification**: Three-way classification (positive, negative, neutral) based on review content
+    
+    ### GitHub Repository:
+    
+    [https://github.com/nessaleal4/AmazonReviews](https://github.com/nessaleal4/AmazonReviews)
+    """)
+
+# Footer
+st.sidebar.markdown("---")
+st.sidebar.info("Developed with Streamlit and Transformers")
