@@ -1,119 +1,114 @@
 import os
 import pickle
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-
-# Ensure NLTK resources are downloaded
-try:
-    nltk.data.find('tokenizers/punkt')
-    nltk.data.find('corpora/stopwords')
-    nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('punkt')
-    nltk.download('stopwords')
-    nltk.download('wordnet')
-
-def preprocess_text(text):
-    """Perform text preprocessing for sentiment analysis."""
-    if not isinstance(text, str):
-        return ""
-    
-    # Tokenize
-    tokens = nltk.word_tokenize(text.lower())
-    
-    # Remove stopwords
-    stop_words = set(stopwords.words('english'))
-    tokens = [token for token in tokens if token not in stop_words]
-    
-    # Lemmatize
-    lemmatizer = WordNetLemmatizer()
-    tokens = [lemmatizer.lemmatize(token) for token in tokens]
-    
-    return " ".join(tokens)
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import numpy as np
+import json
 
 class SentimentPredictor:
-    def __init__(self, model_dir="models"):
+    def __init__(self, model_dir="pretrained"):
         self.model_dir = model_dir
         self.models = {}
+        self.tokenizers = {}
+        self.label_encoders = {}
         self.metadata = {}
         self._load_available_models()
     
     def _load_available_models(self):
-        """Load all available models from the model directory."""
+        """Load all available pretrained models."""
         if not os.path.exists(self.model_dir):
             print(f"Model directory {self.model_dir} does not exist.")
             return
         
-        for filename in os.listdir(self.model_dir):
-            if filename.endswith("_model.pkl"):
-                model_path = os.path.join(self.model_dir, filename)
-                # Extract category and model type from filename
-                parts = os.path.splitext(filename)[0].split("_")
-                category = parts[0]
-                model_type = parts[1]
-                
-                # Load the model
+        categories = ["Electronics", "Books", "Beauty_and_Personal_Care", "Home_and_Kitchen"]
+        
+        for category in categories:
+            model_path = os.path.join(self.model_dir, category)
+            encoder_path = os.path.join(self.model_dir, f"{category}_label_encoder.pkl")
+            metadata_path = os.path.join(self.model_dir, f"{category}_metadata.json")
+            
+            if os.path.exists(model_path) and os.path.exists(encoder_path):
                 try:
-                    with open(model_path, 'rb') as f:
-                        model = pickle.load(f)
+                    # Load MiniLM model and tokenizer
+                    model = AutoModelForSequenceClassification.from_pretrained(model_path)
+                    tokenizer = AutoTokenizer.from_pretrained(model_path)
                     
-                    # Create a key for the model
-                    model_key = f"{category}_{model_type}"
-                    self.models[model_key] = model
+                    # Load label encoder
+                    with open(encoder_path, 'rb') as f:
+                        label_encoder = pickle.load(f)
                     
-                    # Try to load corresponding metadata
-                    metadata_path = os.path.join(self.model_dir, f"{category}_{model_type}_metadata.pkl")
+                    # Store in dictionaries
+                    self.models[category] = model
+                    self.tokenizers[category] = tokenizer
+                    self.label_encoders[category] = label_encoder
+                    
+                    # Load metadata if available
                     if os.path.exists(metadata_path):
-                        with open(metadata_path, 'rb') as f:
-                            self.metadata[model_key] = pickle.load(f)
+                        with open(metadata_path, 'r') as f:
+                            self.metadata[category] = json.load(f)
                     
-                    print(f"Loaded model: {model_key}")
+                    print(f"Loaded model for {category}")
                 except Exception as e:
-                    print(f"Error loading model {filename}: {str(e)}")
+                    print(f"Error loading model for {category}: {str(e)}")
     
     def get_available_categories(self):
-        """Get list of available product categories."""
-        categories = set()
-        for model_key in self.models.keys():
-            category = model_key.split("_")[0]
-            categories.add(category)
-        return sorted(list(categories))
+        """Get list of available product categories with trained models."""
+        return list(self.models.keys())
     
     def get_available_model_types(self, category):
-        """Get list of available model types for a category."""
-        model_types = []
-        for model_key in self.models.keys():
-            parts = model_key.split("_")
-            if parts[0] == category:
-                model_types.append(parts[1])
-        return sorted(model_types)
+        """Return available model types (only minilm for now)."""
+        if category in self.models:
+            return ["minilm"]
+        return []
     
-    def predict(self, text, category, model_type="logistic"):
-        """Predict sentiment for the given text using the specified model."""
-        model_key = f"{category}_{model_type}"
+    def predict(self, text, category, model_type="minilm"):
+        """Predict sentiment for text using the specified model."""
+        if category not in self.models:
+            raise ValueError(f"No model available for category: {category}")
         
-        if model_key not in self.models:
-            raise ValueError(f"Model for {model_key} not found.")
+        # Get model, tokenizer and label encoder
+        model = self.models[category]
+        tokenizer = self.tokenizers[category]
+        label_encoder = self.label_encoders[category]
         
-        # Preprocess the text
-        processed_text = preprocess_text(text)
+        # Prepare the text
+        encoding = tokenizer(
+            text,
+            add_special_tokens=True,
+            max_length=128,
+            padding='max_length',
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors='pt'
+        )
         
-        # Make prediction
-        model = self.models[model_key]
-        sentiment = model.predict([processed_text])[0]
+        # Get prediction
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = model.to(device)
+        model.eval()
         
-        # Get prediction probabilities if the model supports it
+        with torch.no_grad():
+            input_ids = encoding['input_ids'].to(device)
+            attention_mask = encoding['attention_mask'].to(device)
+            
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            probs = torch.nn.functional.softmax(outputs.logits, dim=1)
+            prediction = torch.argmax(probs, dim=1).item()
+        
+        # Convert prediction to sentiment label
+        sentiment = label_encoder.inverse_transform([prediction])[0]
+        
+        # Get probability for each class
         probabilities = {}
-        if hasattr(model, 'predict_proba'):
-            proba = model.predict_proba([processed_text])[0]
-            for i, label in enumerate(model.classes_):
-                probabilities[label] = proba[i]
+        for i, prob in enumerate(probs[0].cpu().numpy()):
+            label = label_encoder.inverse_transform([i])[0]
+            probabilities[label] = float(prob)
         
+        # Prepare result
         result = {
             'sentiment': sentiment,
             'probabilities': probabilities,
-            'model_info': self.metadata.get(model_key, {})
+            'model_info': self.metadata.get(category, {})
         }
         
         return result
