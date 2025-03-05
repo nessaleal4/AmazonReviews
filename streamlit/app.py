@@ -96,7 +96,7 @@ else:
 st.session_state.selected_category = selected_category
 
 # Add tabs
-tab1, tab2, tab3 = st.tabs(["Sentiment Analysis", "Data Explorer", "About"])
+tab1, tab2, tab3, tab4 = st.tabs(["Sentiment Analysis", "Data Explorer", "Top Products", "About"])
 
 # Tab 1: Sentiment Analysis
 with tab1:
@@ -312,8 +312,87 @@ with tab2:
             else:
                 st.warning(f"No reviews found with {sentiment_filter} sentiment.")
 
-# Tab 3: About
+# Tab 3: Top Products
 with tab3:
+    st.header("Top Reviewed Products Analysis")
+    
+    # Category selection for products
+    product_category = st.selectbox("Select Category", available_categories, key="product_category")
+    
+    # Parameters
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        num_products = st.number_input("Number of top products", min_value=5, max_value=20, value=10)
+    with col2:
+        reviews_per_product = st.number_input("Reviews per product", min_value=20, max_value=200, value=50)
+    with col3:
+        enable_summarization = st.checkbox("Enable AI Summarization", value=False,
+                                          help="Uses additional AI models to generate summaries. May increase processing time.")
+    
+    if st.button("Analyze Top Products"):
+        try:
+            # Import the module
+            from src.product_summary import analyze_top_products
+            
+            with st.spinner(f"Analyzing top products in {product_category}..."):
+                # Run the analysis
+                results = analyze_top_products(product_category, num_products, reviews_per_product, enable_summarization)
+                
+                if "error" in results:
+                    st.error(results["error"])
+                else:
+                    # Display results
+                    st.subheader(f"Top {results['num_products_analyzed']} Products in {results['category']}")
+                    
+                    for product in results["products"]:
+                        with st.expander(f"{product['product_title']} (Rating: {product['avg_rating']}⭐)"):
+                            # Overview metrics
+                            cols = st.columns(3)
+                            cols[0].metric("Average Rating", f"{product['avg_rating']}⭐")
+                            cols[1].metric("Reviews Analyzed", product['review_count'])
+                            cols[2].metric("Overall Sentiment", product['overall_sentiment'])
+                            
+                            # Sentiment distribution
+                            st.subheader("Sentiment Distribution")
+                            sentiment_df = pd.DataFrame({
+                                'Sentiment': ['Positive', 'Neutral', 'Negative'],
+                                'Count': [
+                                    product['sentiment_distribution']['positive'],
+                                    product['sentiment_distribution']['neutral'],
+                                    product['sentiment_distribution']['negative']
+                                ]
+                            })
+                            
+                            # Create a bar chart for sentiment distribution
+                            fig = px.bar(sentiment_df, x='Sentiment', y='Count', 
+                                         color='Sentiment',
+                                         color_discrete_map={
+                                             'Positive': 'green',
+                                             'Neutral': 'gray',
+                                             'Negative': 'red'
+                                         })
+                            st.plotly_chart(fig)
+                            
+                            # Summary
+                            st.subheader("Review Summary")
+                            st.write(product['summary'])
+                            
+                            # Sample reviews
+                            if product['sample_positive']:
+                                st.subheader("Sample Positive Reviews")
+                                for i, review in enumerate(product['sample_positive']):
+                                    st.write(f"{i+1}. {review[:200]}..." if len(review) > 200 else f"{i+1}. {review}")
+                            
+                            if product['sample_negative']:
+                                st.subheader("Sample Negative Reviews")
+                                for i, review in enumerate(product['sample_negative']):
+                                    st.write(f"{i+1}. {review[:200]}..." if len(review) > 200 else f"{i+1}. {review}")
+        except Exception as e:
+            st.error(f"Error analyzing top products: {str(e)}")
+            st.write("Please make sure the product_summary.py module is in your src directory.")
+
+# Tab 4: About
+with tab4:
     st.header("About This Project")
     
     st.write("""
@@ -325,6 +404,7 @@ with tab3:
     
     - **Sentiment Analysis**: Analyze the sentiment of any product review using our pre-trained MiniLM model
     - **Data Explorer**: Explore sample data from Amazon reviews, visualize ratings and sentiment distributions
+    - **Top Products**: Analyze the most reviewed products in each category with sentiment breakdown
     - **Product Filtering**: Browse specific products and their reviews within each category
     
     ### How It Works:
@@ -336,7 +416,7 @@ with tab3:
     
     ### Technical Details:
     
-    - **Model**: Microsoft MiniLM, a compact language model that offers excellent performance for sentiment analysis
+    - **Model**: Sentence-transformers MiniLM, a compact language model that offers excellent performance for sentiment analysis
     - **Fine-tuning**: Each model is fine-tuned on 10,000 product reviews from its respective category
     - **Vectorization**: The model converts text to contextual embeddings that capture semantic meaning
     - **Classification**: Three-way classification (positive, negative, neutral) based on review content
