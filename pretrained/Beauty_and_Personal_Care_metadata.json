@@ -1,0 +1,13 @@
+{
+  "category": "Beauty_and_Personal_Care",
+  "num_samples": 383,
+  "label_mapping": {
+    "0": "negative",
+    "1": "positive"
+  },
+  "model_type": "tfidf_logistic",
+  "class_distribution": {
+    "negative": 333,
+    "positive": 50
+  }
+}
